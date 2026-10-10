@@ -33,6 +33,14 @@ func main() {
 
 	mux.HandleFunc("POST /tasks", taskHandler.CreateTask)
 
+	mux.HandleFunc("GET /tasks", taskHandler.GetAllTasks)
+
+	mux.HandleFunc("GET /tasks/{id}", taskHandler.GetTaskById)
+
+	mux.HandleFunc("DELETE /tasks/{id}", taskHandler.DeleteTaskById)
+
+	mux.HandleFunc("PUT /tasks/{id}", taskHandler.UpdateTaskById)
+
 	log.Println("Server is RUnning on : 8080")
 
 	err = http.ListenAndServe( ":8080", mux)
