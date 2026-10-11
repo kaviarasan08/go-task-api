@@ -41,7 +41,7 @@ func main() {
 
 	mux.HandleFunc("PUT /tasks/{id}", taskHandler.UpdateTaskById)
 
-	log.Println("Server is RUnning on : 8080")
+	log.Println("Server is Running on : 8080")
 
 	err = http.ListenAndServe( ":8080", mux)
 

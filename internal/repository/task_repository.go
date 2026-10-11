@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"go_task_api/internal/model"
 )
 
@@ -72,7 +74,7 @@ func (r *TaskRepository) GetAllTasks(ctx context.Context) ([]model.Task, error) 
 
 }
 
-func (r *TaskRepository) GetTaskById(ctx context.Context, id string) (*model.Task, error) {
+func (r *TaskRepository) GetTaskById(ctx context.Context, id int) (*model.Task, error) {
 	var task model.Task
 
 	query := `
@@ -89,23 +91,28 @@ func (r *TaskRepository) GetTaskById(ctx context.Context, id string) (*model.Tas
 
 }
 
-func (r *TaskRepository) DeleteTaskById(ctx context.Context, id string) (string, error) {
+func (r *TaskRepository) DeleteTaskById(ctx context.Context, id int) (string, error) {
 
 	query := `
 		DELETE FROM tasks WHERE id = $1
 	`
 
 	result, err := r.db.ExecContext(ctx, query, id)
+
 	if err != nil {
 		return "", err
 	}
 
 	rowsAffected, err := result.RowsAffected()
+
+	if errors.Is(sql.ErrNoRows, err) {
+		return "", fmt.Errorf("No Task in the required id")
+	}
 	if err != nil {
 		return "", err
 	}
 
-	if rowsAffected == 0 {
+	if rowsAffected == 0{
 		return "", sql.ErrNoRows
 	}
 
@@ -126,6 +133,8 @@ func (r *TaskRepository) UpdateTaskById(ctx context.Context, task model.Task) (s
 	if err != nil {
 		return "", err
 	}
+
+	// if errors.Is(sql.ErrNoRows) 
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {

@@ -38,7 +38,7 @@ func (s *TaskService) GetAllTasks(ctx context.Context) ([]model.Task, error) {
 	return tasks, nil
 }
 
-func (s *TaskService) GetTaskById(ctx context.Context, id string) (*model.Task, error) {
+func (s *TaskService) GetTaskById(ctx context.Context, id int) (*model.Task, error) {
 	task, err := s.repo.GetTaskById(ctx, id)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *TaskService) GetTaskById(ctx context.Context, id string) (*model.Task, 
 	return task, nil
 }
 
-func (s *TaskService) DeleteTaskById(ctx context.Context, id string) (string, error) {
+func (s *TaskService) DeleteTaskById(ctx context.Context, id int) (string, error) {
 	status, err := s.repo.DeleteTaskById(ctx, id)
 
 	if err != nil {

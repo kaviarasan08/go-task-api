@@ -1,3 +1,47 @@
-1. if the db return : 
-	task id not found what we want to show the message
-2. proper validation with login jwt
+phase 1 ->
+	strenghten the exiting api
+		1. request validation
+		2. proper json errors
+		3. http status code
+		4. context timeouts
+		5. Environment Variables
+		6. Timestamps 
+
+phase 2 -> 
+	Improve Project Architecture
+			1. Dependency Injection review
+			2. Interface
+			3. Error Handling
+			4. Middleware
+			5. Graceful shutdown
+			6. Configuration
+
+Phase 3 — Database and testing
+	1. Add a proper database migration tool.
+	2. Configure PostgreSQL connection pooling.
+	3. Learn unit testing in Go.
+	4. Test service and repository logic.
+	5. Write HTTP handler tests using httptest.
+	6. Test error cases, not just successful requests.
+	7. Learn when database transactions are necessary.
+
+Phase 4 — Docker
+	1. Learn Docker fundamentals.
+	2. Write a Dockerfile for your Go API.
+	3. Create a docker-compose.yml for Go and PostgreSQL.
+	4. Configure environment variables.
+	5. Run the entire application using Docker.
+	6. Learn Docker volumes, networking, and persistent database storage.
+
+Phase 5 — Advanced backend development
+	Once the Task API is reliable:
+	- Authentication and JWT
+	- Pagination, filtering, and search
+	- Redis and caching
+	- Background jobs
+	- File uploads
+	- WebSockets
+	- API documentation
+	- Cloud deployment
+	- System design fundamentals
+	- Microservices basics

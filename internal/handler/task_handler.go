@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"go_task_api/internal/model"
 	"go_task_api/internal/service"
-	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type TaskHandler struct {
@@ -24,12 +26,12 @@ type createTaskRequest struct {
 }
 
 type updateTaskRequest struct {
-	Title string `json:"title"`
-	Completed bool `json:"completed"`
+	Title     string `json:"title"`
+	Completed bool   `json:"completed"`
 }
 
 type deleteTaskRepsonse struct {
-	Status int `json:"status"`
+	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
 
@@ -39,14 +41,21 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 
 	if err != nil {
-		http.Error(w, "Invalid Reuest", http.StatusBadRequest) // sends error repsonse
+		// writJSONEror(w, "Invalid Request", http.StatusBadRequest) // sends error repsonse
+		writJSONEror(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(req.Title) == "" {
+		// writJSONEror(w, "title cannot be Empty", http.StatusBadRequest)
+		writJSONEror(w, "title cannot be Empty", http.StatusBadRequest)
 		return
 	}
 
 	task, err := h.service.CreateTask(r.Context(), req.Title)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writJSONEror(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -62,8 +71,8 @@ func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.service.GetAllTasks(r.Context())
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Fatal(err)
+		writJSONEror(w, "Internal server error", http.StatusInternalServerError)
+		// log.Fatal(err)
 		return
 	}
 
@@ -75,12 +84,24 @@ func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
 
-	id := r.PathValue("id")
+	rawId := r.PathValue("id")
+
+	id, err := strconv.Atoi(rawId)
+
+	if err != nil || id <= 0 {
+		writJSONEror(w, "Invalid Task Id", http.StatusBadRequest)
+		return
+	}
 
 	task, err := h.service.GetTaskById(r.Context(), id)
 
+	if errors.Is(err, sql.ErrNoRows) {
+		writJSONEror(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writJSONEror(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -91,54 +112,85 @@ func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TaskHandler) DeleteTaskById(w http.ResponseWriter, r *http.Request) {
-    var response deleteTaskRepsonse
+	var response deleteTaskRepsonse
 
-    id := r.PathValue("id")
+	rawId := r.PathValue("id")
 
-    status, err := h.service.DeleteTaskById(r.Context(), id)
-	str := err.Error()
-    if err != nil {
-        http.Error(w, str, http.StatusInternalServerError)
-		fmt.Println(err)
-        return
-    }
+	id, err := strconv.Atoi(rawId)
 
-    response.Message = status
-    response.Status = http.StatusOK
+	if err != nil || id <= 0 {
+		writJSONEror(w, "Invalid Task Id", http.StatusBadRequest)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
+	status, err := h.service.DeleteTaskById(r.Context(), id)
 
-    json.NewEncoder(w).Encode(response)
+	if errors.Is(err, sql.ErrNoRows) {
+		writJSONEror(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		writJSONEror(w, "Failed to delete task", http.StatusInternalServerError)
+		return
+	}
+
+	response.Message = status
+	response.Status = http.StatusOK
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *TaskHandler) UpdateTaskById(w http.ResponseWriter, r *http.Request) {
-    var request updateTaskRequest
+	var request updateTaskRequest
 	var response deleteTaskRepsonse
 	var task model.Task
 
-	json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&request)
 
-    id := r.PathValue("id")
+	if err != nil {
+		// writJSONEror(w, "Invalid Request", http.StatusBadRequest) // sends error repsonse
+		writJSONEror(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+
+	rawId := r.PathValue("id")
+
+	id, err := strconv.Atoi(rawId)
+
+	if err != nil || id <= 0 {
+		writJSONEror(w, "Invalid Task Id", http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(request.Title) == "" {
+		writJSONEror(w, "Title cannot be empty", http.StatusBadRequest)
+		return
+	}
 
 	task.ID = id
 	task.Title = request.Title
 	task.Completed = request.Completed
 
+	status, err := h.service.UpdateTaskById(r.Context(), task)
 
-    status, err := h.service.UpdateTaskById(r.Context(), task)
-	// str := err.Error()
-    if err != nil {
-        http.Error(w, "Failed to update task", http.StatusInternalServerError)
-		fmt.Println(err)
-        return
-    }
+	if errors.Is(err, sql.ErrNoRows) {
+		writJSONEror(w, "Task not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		writJSONEror(w, "Failed to update task", http.StatusInternalServerError)
+		return
+	}
 
-    response.Message = status
-    response.Status = http.StatusOK
+	response.Message = status
+	response.Status = http.StatusOK
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
-    json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(response)
 }
