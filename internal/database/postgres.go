@@ -42,6 +42,11 @@ func NewPostgresDb() (*sql.DB, error) {
 		return nil, fmt.Errorf("database Connection failde: %w", err)
 	}
 
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxLifetime(time.Minute * 25)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+
 	return db, nil
 
 }

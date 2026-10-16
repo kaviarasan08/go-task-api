@@ -54,6 +54,8 @@ func (r *TaskRepository) GetAllTasks(ctx context.Context) ([]model.Task, error) 
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var task model.Task
 
@@ -69,6 +71,22 @@ func (r *TaskRepository) GetAllTasks(ctx context.Context) ([]model.Task, error) 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("DB Status: ", r.db.Stats())
+	// fmt.Printf("DB Status: %+v\n", r.db.Stats())
+	stats := r.db.Stats()
+
+	fmt.Println("========== Database Pool Status ==========")
+	fmt.Printf("Max Open Connections : %d\n", stats.MaxOpenConnections)
+	fmt.Printf("Open Connections     : %d\n", stats.OpenConnections)
+	fmt.Printf("Connections In Use   : %d\n", stats.InUse)
+	fmt.Printf("Idle Connections     : %d\n", stats.Idle)
+	fmt.Printf("Wait Count           : %d\n", stats.WaitCount)
+	fmt.Printf("Wait Duration        : %v\n", stats.WaitDuration)
+	fmt.Printf("Max Idle Closed      : %d\n", stats.MaxIdleClosed)
+	fmt.Printf("Max Idle Time Closed : %d\n", stats.MaxIdleTimeClosed)
+	fmt.Printf("Max Lifetime Closed  : %d\n", stats.MaxLifetimeClosed)
+	fmt.Println("==========================================")
 
 	return tasks, nil
 
@@ -112,7 +130,7 @@ func (r *TaskRepository) DeleteTaskById(ctx context.Context, id int) (string, er
 		return "", err
 	}
 
-	if rowsAffected == 0{
+	if rowsAffected == 0 {
 		return "", sql.ErrNoRows
 	}
 
@@ -134,7 +152,7 @@ func (r *TaskRepository) UpdateTaskById(ctx context.Context, task model.Task) (s
 		return "", err
 	}
 
-	// if errors.Is(sql.ErrNoRows) 
+	// if errors.Is(sql.ErrNoRows)
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
